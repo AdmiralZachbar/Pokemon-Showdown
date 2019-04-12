@@ -106,13 +106,30 @@ class PatternTester {
 	/**
 	 * @param {string} text
 	 */
-	test(text) {
+	testCommand(text) {
 		const spaceIndex = text.indexOf(' ');
 		if (this.fastElements.has(spaceIndex >= 0 ? text.slice(0, spaceIndex) : text)) {
 			return true;
 		}
 		if (!this.regexp) return false;
 		return this.regexp.test(text);
+	}
+	/**
+	 * @param {string} text
+	 */
+	test(text) {
+		if (!text.includes('\n')) return null;
+		if (this.testCommand(text)) return text;
+		// The PM matching is a huge mess, and really needs to be replaced with
+		// the new multiline command system soon.
+		const pmMatches = /^(\/(?:pm|w|whisper|msg) [^,]*, ?)(.*)/i.exec(text);
+		if (pmMatches && this.testCommand(pmMatches[2])) {
+			if (text.split('\n').every(line => line.startsWith(pmMatches[1]))) {
+				return text.replace(/\n\/(?:pm|w|whisper|msg) [^,]*, ?/g, '\n');
+			}
+			return text;
+		}
+		return null;
 	}
 }
 
@@ -182,7 +199,7 @@ Chat.namefilter = function (name, user) {
 		// \u2E80-\u32FF              CJK symbols
 		// \u3400-\u9FFF              CJK
 		// \uF900-\uFAFF\uFE00-\uFE6F CJK extended
-		name = name.replace(/[^a-zA-Z0-9 /\\.~()<>^*%&=+$@#_'?!"\u00A1-\u00BF\u00D7\u00F7\u02B9-\u0362\u2012-\u2027\u2030-\u205E\u2050-\u205F\u2190-\u23FA\u2500-\u2BD1\u2E80-\u32FF\u3400-\u9FFF\uF900-\uFAFF\uFE00-\uFE6F-]+/g, '');
+		name = name.replace(/[^a-zA-Z0-9 /\\.~()<>^*%&=+$#_'?!"\u00A1-\u00BF\u00D7\u00F7\u02B9-\u0362\u2012-\u2027\u2030-\u205E\u2050-\u205F\u2190-\u23FA\u2500-\u2BD1\u2E80-\u32FF\u3400-\u9FFF\uF900-\uFAFF\uFE00-\uFE6F-]+/g, '');
 
 		// blacklist
 		// \u00a1 upside-down exclamation mark (i)
